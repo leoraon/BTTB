@@ -1,0 +1,12 @@
+<Solution>
+  <Folder Name="/Database/">
+    <File Path="Database/create-database.sql" />
+    <File Path="Database/seed_data.sql" />
+    <File Path="Database/seed-data.sql" />
+    <File Path="Database/erd-diagram.mmd" />
+    <File Path="Database/schema.dbml" />
+  </Folder>
+  <Project Path="CMMS.Backend/CMMS.Backend.csproj" />
+  <Project Path="CMMS.Backend.Tests/CMMS.Backend.Tests.csproj" />
+  <Project Path="CMMS.Shared/CMMS.Shared.csproj" />
+</Solution>

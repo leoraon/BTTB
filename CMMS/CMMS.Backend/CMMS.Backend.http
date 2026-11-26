@@ -1,0 +1,23 @@
+@CMMS_Host = https://localhost:7077
+
+### 1. Đăng nhập tài khoản Admin (mật khẩu mặc định 123456)
+POST {{CMMS_Host}}/api/auth/login
+Content-Type: application/json
+
+{
+  "tenDangNhap": "admin.hung",
+  "matKhau": "123456"
+}
+
+### 2. Đăng nhập Trưởng BP Bảo trì
+POST {{CMMS_Host}}/api/auth/login
+Content-Type: application/json
+
+{
+  "tenDangNhap": "lead.trong",
+  "matKhau": "123456"
+}
+
+### 3. Lấy Dashboard (dán token lấy được ở bước trên vào Bearer)
+GET {{CMMS_Host}}/api/dashboard/summary
+Authorization: Bearer PASTE_JWT_TOKEN_HERE

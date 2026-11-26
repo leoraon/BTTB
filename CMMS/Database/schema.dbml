@@ -1,0 +1,417 @@
+// ============================================================
+// HỆ THỐNG QUẢN LÝ BẢO TRÌ THIẾT BỊ (CMMS)
+// SCHEMA DBML CHUẨN HOÁ 3NF CHO DỰ ÁN NHÀ MÁY CƠ KHÍ
+// Import trực tiếp sang dbdiagram.io hoặc draw.io
+// ============================================================
+
+Project CMMS_Database {
+  database_type: 'MySQL'
+  Note: 'Mô hình CSDL vật lý 27 thực thể chuẩn 3NF quản lý bảo trì thiết bị nhà máy'
+}
+
+// ------------------------------------------------------------
+// PHÂN HỆ 1: HỆ THỐNG & TỔ CHỨC
+// ------------------------------------------------------------
+
+Table NHAN_VIEN {
+  NhanVienId varchar(20) [pk, note: 'Mã định danh nhân viên']
+  HoTen varchar(100) [not null, note: 'Họ và tên']
+  SoDienThoai varchar(15) [not null, note: 'Số điện thoại']
+  Email varchar(100) [not null, unique, note: 'Email']
+  DonViId varchar(30) [not null, note: 'Phân xưởng/bộ phận trực thuộc']
+  ChucVu varchar(50) [not null, note: 'Chức vụ công tác']
+  ChuyenNganh varchar(50) [null, note: 'Chuyên ngành kỹ thuật (KTV)']
+  BacTho varchar(20) [null, note: 'Bậc thợ kỹ thuật (KTV)']
+  CaLamViec varchar(20) [null, note: 'Ca làm việc (Ca 1, Ca 2, Ca 3, HanhChinh)']
+  TrangThaiSanSang varchar(20) [null, note: 'SanSang, DangBan, NghiPhep']
+  TrangThai varchar(20) [not null, default: 'DangLamViec', note: 'DangLamViec, DaNghiViec']
+}
+
+Table TAI_KHOAN {
+  TaiKhoanId int [pk, increment, note: 'Khóa chính tự tăng']
+  NhanVienId varchar(20) [not null, unique, note: 'Liên kết 1-1 với nhân viên']
+  TenDangNhap varchar(50) [not null, unique, note: 'Tên đăng nhập hệ thống']
+  MatKhauHash varchar(255) [not null, note: 'Mật khẩu đã băm BCrypt/Argon2']
+  VaiTroId int [not null, note: 'Vai trò phân quyền']
+  TrangThaiTaiKhoan varchar(20) [not null, default: 'ChoDuyet', note: 'ChoDuyet, DangHoatDong, TuChoi, DangKhoa']
+  SoLanDangNhapSai int [not null, default: 0, note: 'Số lần đăng nhập sai']
+  ThoiDiemMoKhoaTam datetime [null, note: 'Thời điểm hết khóa tạm']
+  NgayTao datetime [not null, default: `now()`, note: 'Thời điểm tạo']
+  NguoiDuyetId varchar(20) [null, note: 'Quản lý duyệt kích hoạt']
+}
+
+Table VAI_TRO {
+  VaiTroId int [pk, note: '1: Admin, 2: Manager, 3: Lead, 4: Tech, 5: Operator']
+  TenVaiTro varchar(50) [not null, unique, note: 'Tên vai trò']
+  MoTa varchar(255) [null, note: 'Mô tả quyền hạn']
+}
+
+Table VAI_TRO_QUYEN {
+  VaiTroId int [not null, note: 'Mã vai trò']
+  MaQuyen varchar(50) [not null, note: 'Mã quyền chức năng Enum']
+  indexes {
+    (VaiTroId, MaQuyen) [pk]
+  }
+}
+
+Table NHAT_KY_HE_THONG {
+  NhatKyId bigint [pk, increment, note: 'Mã nhật ký tự tăng']
+  TaiKhoanId int [null, note: 'Tài khoản thực hiện thao tác']
+  ThoiDiem datetime [not null, default: `now()`, note: 'Thời điểm phát sinh']
+  LoaiThaoTac varchar(50) [not null, note: 'Loại thao tác']
+  DoiTuongTacDong varchar(100) [null, note: 'Mã bản ghi tác động']
+  MoTaChiTiet text [not null, note: 'Chi tiết thao tác']
+}
+
+Table THU_VIEN_BIEU_MAU {
+  BieuMauId varchar(30) [pk, note: 'BM-01 đến BM-06']
+  TenBieuMau varchar(150) [not null, note: 'Tên biểu mẫu']
+  LoaiBieuMau varchar(50) [not null, note: 'Loại biểu mẫu nghiệp vụ']
+  DinhDangTep varchar(10) [not null, note: 'DOCX hoặc PDF']
+  DuongDanTep varchar(255) [not null, note: 'Đường dẫn tệp']
+  MoTa varchar(255) [null, note: 'Mô tả mục đích']
+}
+
+Table PHAN_XUONG_BO_PHAN {
+  DonViId varchar(30) [pk, note: 'Mã đơn vị']
+  TenDonVi varchar(100) [not null, note: 'Tên phân xưởng/dây chuyền']
+  DonViChaId varchar(30) [null, note: 'Đơn vị cha đệ quy']
+  LoaiDonVi varchar(30) [not null, note: 'PhanXuong, DayChuyen, BoPhanQuanLy']
+  NguoiPhuTrachId varchar(20) [null, note: 'Trưởng bộ phận/quản đốc']
+  MoTa varchar(255) [null, note: 'Ghi chú']
+}
+
+// ------------------------------------------------------------
+// PHÂN HỆ 2: TÀI SẢN THIẾT BỊ
+// ------------------------------------------------------------
+
+Table NHOM_THIET_BI {
+  NhomThietBiId varchar(30) [pk, note: 'Mã nhóm thiết bị']
+  TenNhom varchar(100) [not null, note: 'Tên nhóm máy/cụm con']
+  LaCumChiTiet tinyint [not null, default: 0, note: '0: Máy chính, 1: Cụm chi tiết con']
+  MoTa varchar(255) [null, note: 'Mô tả']
+}
+
+Table DANH_MUC_MA_LOI {
+  MaLoiId varchar(20) [pk, note: 'Mã lỗi chuẩn hóa']
+  TenLoaiSuCo varchar(100) [not null, note: 'Tên sự cố']
+  MoTaDauHieu varchar(255) [not null, note: 'Dấu hiệu nhận biết']
+}
+
+Table THIET_BI {
+  ThietBiId varchar(30) [pk, note: 'Mã thiết bị']
+  TenThietBi varchar(150) [not null, note: 'Tên thiết bị']
+  ThietBiChaId varchar(30) [null, note: 'Thiết bị cha (tối đa 2 cấp)']
+  NhomThietBiId varchar(30) [not null, note: 'Nhóm thiết bị']
+  ViTriLapDatId varchar(30) [not null, note: 'Vị trí phân xưởng đặt máy']
+  BoPhanQuanLyId varchar(30) [not null, note: 'Bộ phận quản lý vận hành']
+  Model varchar(50) [not null, note: 'Kiểu máy']
+  Serial varchar(50) [not null, unique, note: 'Số serial']
+  NhaSanXuat varchar(100) [not null, note: 'Hãng chế tạo']
+  NgayDuaVaoSuDung date [not null, note: 'Ngày bắt đầu vận hành']
+  ChuKyBaoTriKhuyenNghiNgay int [not null, default: 30, note: 'Chu kỳ khuyến nghị (ngày)']
+  CongDungMoTa text [not null, note: 'Mô tả công dụng']
+  LuuYAnToan text [null, note: 'Lưu ý an toàn']
+  TrangThaiVanHanh varchar(30) [not null, default: 'DangHoatDong', note: 'DangHoatDong, DungDoSuCo, DangBaoTri, DuPhong, NgungSuDung']
+  DuongDanAnh varchar(255) [null, note: 'Ảnh máy']
+  DuongDanTaiLieu varchar(255) [null, note: 'Tài liệu hướng dẫn PDF']
+}
+
+Table THONG_SO_THIET_BI {
+  ThongSoId bigint [pk, increment, note: 'Mã thông số tự tăng']
+  ThietBiId varchar(30) [not null, note: 'Thiết bị']
+  TenThongSo varchar(100) [not null, note: 'Tên chỉ số kỹ thuật']
+  GiaTri varchar(100) [not null, note: 'Giá trị']
+  DonViDo varchar(30) [null, note: 'Đơn vị tính']
+  MoTa varchar(255) [null, note: 'Ghi chú']
+}
+
+// ------------------------------------------------------------
+// PHÂN HỆ 3: BẢO TRÌ SỰ CỐ
+// ------------------------------------------------------------
+
+Table CAU_HINH_MUC_UU_TIEN {
+  MucUuTienId int [pk, note: '1: Khẩn cấp, 2: Cao, 3: Trung bình, 4: Thấp']
+  TenMucUuTien varchar(30) [not null, unique, note: 'Tên mức ưu tiên']
+  ThuTuUuTien int [not null, unique, note: 'Thứ tự ưu tiên 1-4']
+  MaMauHienThi varchar(20) [not null, note: 'Mã màu hiển thị']
+  ThoiHanPhanHoiPhut int [not null, note: 'Thời hạn phản hồi SLA (phút)']
+}
+
+Table YEU_CAU_BAO_TRI {
+  YeuCauId varchar(30) [pk, note: 'Mã yêu cầu báo hỏng']
+  ThietBiId varchar(30) [not null, note: 'Thiết bị gặp sự cố']
+  NguoiBaoId varchar(20) [not null, note: 'Người gửi báo hỏng']
+  ThoiDiemGui datetime [not null, default: `now()`, note: 'Thời điểm gửi']
+  MoTaTrieuChung text [not null, note: 'Mô tả triệu chứng']
+  DuongDanAnhSuCo varchar(255) [null, note: 'Ảnh sự cố']
+  MayDangDung tinyint [not null, default: 0, note: 'Máy có dừng hoạt động không']
+  MucUuTienDeXuatId int [not null, note: 'Mức ưu tiên người báo đề xuất']
+  MucUuTienChinhThucId int [null, note: 'Mức ưu tiên Trưởng BP duyệt']
+  HanPhanHoi datetime [not null, note: 'Hạn chót phản hồi theo SLA']
+  TrangThaiYeuCau varchar(30) [not null, default: 'ChoTiepNhan', note: 'ChoTiepNhan, DaPheDuyet, TuChoi, DangXuLy, HoanThanh, DaHuy']
+  MaLoiId varchar(20) [null, note: 'Mã sự cố sơ bộ']
+  NhanDinhNguyenNhanSoBo text [null, note: 'Nhận định của Trưởng BP']
+  HuongXuLy varchar(50) [null, note: 'SuaChuaKhanCap, SuaChuaTheoKeHoach']
+  NguoiDuyetId varchar(20) [null, note: 'Người duyệt']
+  ThoiDiemDuyet datetime [null, note: 'Thời điểm duyệt']
+  LyDoTuChoi varchar(255) [null, note: 'Giải trình khi từ chối']
+}
+
+// ------------------------------------------------------------
+// PHÂN HỆ 4: BẢO TRÌ PHÒNG NGỪA
+// ------------------------------------------------------------
+
+Table MAU_CHECKLIST {
+  MauChecklistId varchar(30) [pk, note: 'Mã mẫu checklist']
+  TenMau varchar(150) [not null, note: 'Tên mẫu quy trình']
+  NhomThietBiId varchar(30) [not null, note: 'Nhóm thiết bị áp dụng']
+  MoTaTieuChuan text [null, note: 'Mô tả tiêu chuẩn']
+  TrangThaiHieuLuc varchar(20) [not null, default: 'DangApDung', note: 'DangApDung, NgungApDung']
+}
+
+Table HANG_MUC_CHECKLIST {
+  HangMucId int [pk, increment, note: 'Khóa tự tăng']
+  MauChecklistId varchar(30) [not null, note: 'Mẫu checklist']
+  NhomBoPhan varchar(100) [not null, note: 'Bộ phận máy']
+  NoiDungCongViec varchar(255) [not null, note: 'Thao tác kiểm tra']
+  KieuKetQua varchar(20) [not null, note: 'Dat_KhongDat, NhapSoDo']
+  TieuChuanYeuCau varchar(255) [not null, note: 'Tiêu chuẩn đạt']
+  GiaTriMin decimal(12,2) [null, note: 'Ngưỡng dưới']
+  GiaTriMax decimal(12,2) [null, note: 'Ngưỡng trên']
+  DonViDo varchar(30) [null, note: 'Đơn vị đo']
+  ThuTuThucHien int [not null, default: 1, note: 'Thứ tự thực hiện']
+}
+
+Table KE_HOACH_BAO_TRI {
+  KeHoachId varchar(30) [pk, note: 'Mã kế hoạch']
+  TenKeHoach varchar(150) [not null, note: 'Tên kế hoạch']
+  ThietBiId varchar(30) [not null, note: 'Thiết bị áp dụng']
+  MauChecklistId varchar(30) [not null, note: 'Mẫu checklist']
+  DonViChuKy varchar(20) [not null, note: 'Ngay, Tuan, Thang, Quy, Nam']
+  GiaTriChuKy int [not null, note: 'Giá trị chu kỳ']
+  SoNgaySinhLenhTruoc int [not null, default: 3, note: 'Số ngày sinh lệnh trước hạn']
+  ThoiGianDuKienPhut int [not null, default: 60, note: 'Thời lượng dự kiến']
+  NgayBatDauApDung date [not null, note: 'Ngày bắt đầu áp dụng']
+  NgayHoanThanhGanNhat date [null, note: 'Ngày hoàn thành kỳ gần nhất']
+  NgayDenHanTiepTheo date [not null, note: 'Ngày đến hạn kỳ tiếp theo']
+  TrangThaiKeHoach varchar(30) [not null, default: 'DangApDung', note: 'DangApDung, TamDung, NgungApDung']
+  MoTa varchar(255) [null, note: 'Ghi chú']
+}
+
+// ------------------------------------------------------------
+// PHÂN HỆ 5: LỆNH & QUÁ TRÌNH BẢO TRÌ
+// ------------------------------------------------------------
+
+Table LENH_BAO_TRI {
+  LenhBaoTriId varchar(30) [pk, note: 'Mã lệnh bảo trì']
+  ThietBiId varchar(30) [not null, note: 'Thiết bị']
+  LoaiLenh varchar(30) [not null, note: 'BaoTriSuCo, BaoTriPhongNgua']
+  YeuCauId varchar(30) [null, note: 'Yêu cầu sự cố']
+  KeHoachId varchar(30) [null, note: 'Kế hoạch định kỳ']
+  NoiDungCongViec text [not null, note: 'Nội dung chi tiết']
+  MucUuTienId int [not null, note: 'Mức ưu tiên']
+  ThoiGianDuKienBatDau datetime [not null, note: 'Dự kiến bắt đầu']
+  ThoiGianDuKienKetThuc datetime [not null, note: 'Dự kiến kết thúc mới nhất']
+  ThoiDiemThucTeBatDau datetime [null, note: 'Bắt đầu thực tế']
+  ThoiDiemThucTeKetThuc datetime [null, note: 'Kết thúc thực tế']
+  LyDoTamDung varchar(255) [null, note: 'Lý do tạm dừng']
+  TrangThaiLenh varchar(30) [not null, default: 'MoiTao', note: 'MoiTao, DaPhanCong, DangThucHien, TamDung, DaHoanThanh, DaNghiemThu, DaDong, DaHuy']
+  TinhTrangSauBaoTri varchar(30) [null, note: 'DatChuan, CanTheoDoi']
+  NguoiBanGiaoId varchar(20) [null, note: 'KTV bàn giao']
+  NguoiKyNhanId varchar(20) [null, note: 'Người dùng ký nhận']
+  ThoiDiemNghiemThu datetime [null, note: 'Thời điểm nghiệm thu']
+  NhanXetNghiemThu text [null, note: 'Nhận xét']
+  NguoiTaoId varchar(20) [null, note: 'Người tạo lệnh']
+  NguoiDuyetDongId varchar(20) [null, note: 'Trưởng BP duyệt đóng lệnh']
+}
+
+Table CHUYEN_MON_KTV {
+  NhanVienId varchar(20) [not null, note: 'Kỹ thuật viên']
+  NhomThietBiId varchar(30) [not null, note: 'Nhóm thiết bị']
+  GhiChu varchar(100) [null, note: 'Thợ chính / Thợ phụ']
+  indexes {
+    (NhanVienId, NhomThietBiId) [pk]
+  }
+}
+
+Table PHAN_CONG_KTV {
+  PhanCongId bigint [pk, increment, note: 'Mã phân công tự tăng']
+  LenhBaoTriId varchar(30) [not null, note: 'Lệnh bảo trì']
+  KyThuatVienId varchar(20) [not null, note: 'Kỹ thuật viên thực hiện']
+  NguoiPhanCongId varchar(20) [not null, note: 'Người giao việc']
+  ThoiDiemPhanCong datetime [not null, default: `now()`, note: 'Thời điểm giao']
+  KhungGioBatDau datetime [not null, note: 'Giờ bắt đầu ca']
+  KhungGioKetThuc datetime [not null, note: 'Giờ kết thúc ca']
+  VaiTroTrongLenh varchar(30) [not null, default: 'ThoChinh', note: 'ThoChinh, ThoPhu']
+  SoGioCongThucTe decimal(6,2) [not null, default: 0.00, note: 'Giờ công thực tế']
+  TrangThaiPhanCong varchar(30) [not null, default: 'DaGiao', note: 'DaGiao, DangLam, HoanThanh, HuyDieuChuyen']
+}
+
+Table KET_QUA_CHECKLIST {
+  KetQuaId bigint [pk, increment, note: 'Mã kết quả tự tăng']
+  LenhBaoTriId varchar(30) [not null, note: 'Lệnh bảo trì']
+  HangMucId int [not null, note: 'Hạng mục checklist']
+  GiaTriDoThucTe decimal(12,2) [null, note: 'Số đo thực tế']
+  KetLuan varchar(20) [not null, note: 'Dat, KhongDat']
+  NguoiKiemTraId varchar(20) [not null, note: 'KTV kiểm tra']
+  ThoiDiemKiemTra datetime [not null, default: `now()`, note: 'Thời điểm kiểm tra']
+  GhiChu varchar(255) [null, note: 'Ghi chú bất thường']
+}
+
+Table BAO_CAO_SU_CO {
+  BaoCaoSuCoId bigint [pk, increment, note: 'Mã báo cáo tự tăng']
+  LenhBaoTriId varchar(30) [not null, unique, note: 'Quan hệ 1-1 với Lệnh sự cố']
+  MaLoiChinhThucId varchar(20) [not null, note: 'Mã sự cố chính thức']
+  CoDungMay tinyint [not null, default: 0, note: 'Có dừng máy không']
+  ThoiDiemXayRa datetime [null, note: 'Thời điểm bắt đầu dừng máy']
+  ThoiDiemKhoiPhuc datetime [null, note: 'Thời điểm máy chạy lại']
+  MoTaHuHong text [not null, note: 'Mô tả chi tiết hư hỏng']
+  NguyenNhanGocRe text [not null, note: 'Nguyên nhân gốc rễ']
+  MucDoAnhHuongPhanTram int [not null, default: 100, note: 'Mức độ ảnh hưởng (%)']
+  BienPhapKhacPhuc text [not null, note: 'Biện pháp khắc phục']
+  NguoiLapBaoCaoId varchar(20) [not null, note: 'KTV lập báo cáo']
+}
+
+// ------------------------------------------------------------
+// PHÂN HỆ 6: QUẢN LÝ PHỤ TÙNG & KHO HIỆN VẬT
+// ------------------------------------------------------------
+
+Table PHU_TUNG {
+  PhuTungId varchar(30) [pk, note: 'Mã phụ tùng']
+  TenPhuTung varchar(150) [not null, note: 'Tên phụ tùng']
+  LoaiPhuTung varchar(50) [not null, note: 'CoKhi, Dien, TieuHao, DungCu']
+  QuyCach varchar(150) [not null, note: 'Quy cách kích thước']
+  DonViTinh varchar(20) [not null, note: 'Đơn vị tính']
+  SoLuongTonHienCo decimal(10,2) [not null, default: 0.00, note: 'Tồn thực tế']
+  SoLuongDangDuTru decimal(10,2) [not null, default: 0.00, note: 'Đang giữ chỗ']
+  MucTonToiThieu decimal(10,2) [not null, default: 0.00, note: 'Ngưỡng cảnh báo']
+  MoTa varchar(255) [null, note: 'Mô tả']
+}
+
+Table DINH_MUC_LINH_KIEN {
+  DinhMucId bigint [pk, increment, note: 'Khóa tự tăng']
+  ThietBiId varchar(30) [not null, note: 'Thiết bị']
+  PhuTungId varchar(30) [not null, note: 'Phụ tùng']
+  SoLuongDinhMuc decimal(10,2) [not null, default: 1.00, note: 'Định mức số lượng']
+  ThayTheDinhKy tinyint [not null, default: 0, note: 'Thay định kỳ']
+  ViTriLapDat varchar(100) [null, note: 'Vị trí lắp trên máy']
+  indexes {
+    (ThietBiId, PhuTungId) [unique]
+  }
+}
+
+Table PHIEU_CAP_NHAT_TON_KHO {
+  PhieuCapNhatId varchar(30) [pk, note: 'Mã phiếu cập nhật kho']
+  LoaiCapNhat varchar(30) [not null, note: 'BoSungTuKhoNgoai, DieuChinhKiemKe']
+  MaPhieuKhoNgoai varchar(50) [null, note: 'Số chứng từ kho ngoài']
+  ThoiDiemLap datetime [not null, default: `now()`, note: 'Thời điểm lập']
+  NguoiLapId varchar(20) [not null, note: 'Trưởng BP bảo trì']
+  NguoiXacNhanId varchar(20) [null, note: 'Quản lý duyệt']
+  ThoiDiemXacNhan datetime [null, note: 'Thời điểm duyệt trừ tồn']
+  TrangThaiPhieu varchar(30) [not null, default: 'ChoXacNhan', note: 'ChoXacNhan, DaXacNhan, TuChoi']
+  GhiChu varchar(255) [null, note: 'Giải trình']
+}
+
+Table CHI_TIET_CAP_NHAT_TON_KHO {
+  ChiTietCapNhatId bigint [pk, increment, note: 'Khóa tự tăng']
+  PhieuCapNhatId varchar(30) [not null, note: 'Phiếu cập nhật cha']
+  PhuTungId varchar(30) [not null, note: 'Phụ tùng']
+  SoLuongThayDoi decimal(10,2) [not null, note: 'Số lượng thay đổi']
+  GhiChu varchar(255) [null, note: 'Ghi chú']
+}
+
+Table PHIEU_DU_TRU_XUAT_DUNG {
+  PhieuXuatId varchar(30) [pk, note: 'Mã phiếu xuất dùng']
+  LenhBaoTriId varchar(30) [not null, note: 'Lệnh bảo trì']
+  NguoiLapDuTruId varchar(20) [not null, note: 'Trưởng BP lập dự trù']
+  ThoiDiemLap datetime [not null, default: `now()`, note: 'Thời điểm lập']
+  NguoiKhaiBaoId varchar(20) [null, note: 'KTV khai báo dùng']
+  ThoiDiemKhaiBao datetime [null, note: 'Thời điểm khai báo']
+  NguoiDuyetVuotId varchar(20) [null, note: 'Duyệt vượt dự trù']
+  ThoiDiemDuyetVuot datetime [null, note: 'Thời điểm duyệt vượt']
+  NguoiXacNhanXuatId varchar(20) [null, note: 'Trưởng BP chốt xuất']
+  ThoiDiemXacNhan datetime [null, note: 'Thời điểm chốt trừ kho']
+  TrangThaiPhieu varchar(30) [not null, default: 'DangDuTru', note: 'DangDuTru, DaKhaiBaoThucDung, ChoDuyetVuotDuTru, DaXacNhanTruTon, DaHuy']
+  GhiChu text [null, note: 'Ghi chú']
+}
+
+Table CHI_TIET_PHIEU_XUAT {
+  ChiTietId bigint [pk, increment, note: 'Khóa tự tăng']
+  PhieuXuatId varchar(30) [not null, note: 'Phiếu xuất cha']
+  PhuTungId varchar(30) [not null, note: 'Phụ tùng']
+  SoLuongDuTru decimal(10,2) [not null, default: 0.00, note: 'Dự trù']
+  SoLuongThucDung decimal(10,2) [null, note: 'Thực dùng']
+  GhiChuGiaiTrinh varchar(255) [null, note: 'Giải trình sai lệch']
+}
+
+// ------------------------------------------------------------
+// KHÓA NGOẠI & QUAN HỆ (FOREIGN KEYS & RELATIONSHIPS)
+// ------------------------------------------------------------
+
+// Phân hệ 1
+Ref: NHAN_VIEN.DonViId > PHAN_XUONG_BO_PHAN.DonViId
+Ref: TAI_KHOAN.NhanVienId - NHAN_VIEN.NhanVienId
+Ref: TAI_KHOAN.VaiTroId > VAI_TRO.VaiTroId
+Ref: TAI_KHOAN.NguoiDuyetId > NHAN_VIEN.NhanVienId
+Ref: VAI_TRO_QUYEN.VaiTroId > VAI_TRO.VaiTroId
+Ref: NHAT_KY_HE_THONG.TaiKhoanId > TAI_KHOAN.TaiKhoanId
+Ref: PHAN_XUONG_BO_PHAN.DonViChaId > PHAN_XUONG_BO_PHAN.DonViId
+Ref: PHAN_XUONG_BO_PHAN.NguoiPhuTrachId > NHAN_VIEN.NhanVienId
+
+// Phân hệ 2
+Ref: THIET_BI.NhomThietBiId > NHOM_THIET_BI.NhomThietBiId
+Ref: THIET_BI.ViTriLapDatId > PHAN_XUONG_BO_PHAN.DonViId
+Ref: THIET_BI.BoPhanQuanLyId > PHAN_XUONG_BO_PHAN.DonViId
+Ref: THIET_BI.ThietBiChaId > THIET_BI.ThietBiId
+Ref: THONG_SO_THIET_BI.ThietBiId > THIET_BI.ThietBiId
+
+// Phân hệ 3
+Ref: YEU_CAU_BAO_TRI.ThietBiId > THIET_BI.ThietBiId
+Ref: YEU_CAU_BAO_TRI.NguoiBaoId > NHAN_VIEN.NhanVienId
+Ref: YEU_CAU_BAO_TRI.MucUuTienDeXuatId > CAU_HINH_MUC_UU_TIEN.MucUuTienId
+Ref: YEU_CAU_BAO_TRI.MucUuTienChinhThucId > CAU_HINH_MUC_UU_TIEN.MucUuTienId
+Ref: YEU_CAU_BAO_TRI.MaLoiId > DANH_MUC_MA_LOI.MaLoiId
+Ref: YEU_CAU_BAO_TRI.NguoiDuyetId > NHAN_VIEN.NhanVienId
+
+// Phân hệ 4
+Ref: MAU_CHECKLIST.NhomThietBiId > NHOM_THIET_BI.NhomThietBiId
+Ref: HANG_MUC_CHECKLIST.MauChecklistId > MAU_CHECKLIST.MauChecklistId
+Ref: KE_HOACH_BAO_TRI.ThietBiId > THIET_BI.ThietBiId
+Ref: KE_HOACH_BAO_TRI.MauChecklistId > MAU_CHECKLIST.MauChecklistId
+
+// Phân hệ 5
+Ref: LENH_BAO_TRI.ThietBiId > THIET_BI.ThietBiId
+Ref: LENH_BAO_TRI.YeuCauId - YEU_CAU_BAO_TRI.YeuCauId
+Ref: LENH_BAO_TRI.KeHoachId > KE_HOACH_BAO_TRI.KeHoachId
+Ref: LENH_BAO_TRI.MucUuTienId > CAU_HINH_MUC_UU_TIEN.MucUuTienId
+Ref: LENH_BAO_TRI.NguoiBanGiaoId > NHAN_VIEN.NhanVienId
+Ref: LENH_BAO_TRI.NguoiKyNhanId > NHAN_VIEN.NhanVienId
+Ref: LENH_BAO_TRI.NguoiTaoId > NHAN_VIEN.NhanVienId
+Ref: LENH_BAO_TRI.NguoiDuyetDongId > NHAN_VIEN.NhanVienId
+Ref: CHUYEN_MON_KTV.NhanVienId > NHAN_VIEN.NhanVienId
+Ref: CHUYEN_MON_KTV.NhomThietBiId > NHOM_THIET_BI.NhomThietBiId
+Ref: PHAN_CONG_KTV.LenhBaoTriId > LENH_BAO_TRI.LenhBaoTriId
+Ref: PHAN_CONG_KTV.KyThuatVienId > NHAN_VIEN.NhanVienId
+Ref: PHAN_CONG_KTV.NguoiPhanCongId > NHAN_VIEN.NhanVienId
+Ref: KET_QUA_CHECKLIST.LenhBaoTriId > LENH_BAO_TRI.LenhBaoTriId
+Ref: KET_QUA_CHECKLIST.HangMucId > HANG_MUC_CHECKLIST.HangMucId
+Ref: KET_QUA_CHECKLIST.NguoiKiemTraId > NHAN_VIEN.NhanVienId
+Ref: BAO_CAO_SU_CO.LenhBaoTriId - LENH_BAO_TRI.LenhBaoTriId
+Ref: BAO_CAO_SU_CO.MaLoiChinhThucId > DANH_MUC_MA_LOI.MaLoiId
+Ref: BAO_CAO_SU_CO.NguoiLapBaoCaoId > NHAN_VIEN.NhanVienId
+
+// Phân hệ 6
+Ref: DINH_MUC_LINH_KIEN.ThietBiId > THIET_BI.ThietBiId
+Ref: DINH_MUC_LINH_KIEN.PhuTungId > PHU_TUNG.PhuTungId
+Ref: PHIEU_CAP_NHAT_TON_KHO.NguoiLapId > NHAN_VIEN.NhanVienId
+Ref: PHIEU_CAP_NHAT_TON_KHO.NguoiXacNhanId > NHAN_VIEN.NhanVienId
+Ref: CHI_TIET_CAP_NHAT_TON_KHO.PhieuCapNhatId > PHIEU_CAP_NHAT_TON_KHO.PhieuCapNhatId
+Ref: CHI_TIET_CAP_NHAT_TON_KHO.PhuTungId > PHU_TUNG.PhuTungId
+Ref: PHIEU_DU_TRU_XUAT_DUNG.LenhBaoTriId > LENH_BAO_TRI.LenhBaoTriId
+Ref: PHIEU_DU_TRU_XUAT_DUNG.NguoiLapDuTruId > NHAN_VIEN.NhanVienId
+Ref: PHIEU_DU_TRU_XUAT_DUNG.NguoiKhaiBaoId > NHAN_VIEN.NhanVienId
+Ref: PHIEU_DU_TRU_XUAT_DUNG.NguoiDuyetVuotId > NHAN_VIEN.NhanVienId
+Ref: PHIEU_DU_TRU_XUAT_DUNG.NguoiXacNhanXuatId > NHAN_VIEN.NhanVienId
+Ref: CHI_TIET_PHIEU_XUAT.PhieuXuatId > PHIEU_DU_TRU_XUAT_DUNG.PhieuXuatId
+Ref: CHI_TIET_PHIEU_XUAT.PhuTungId > PHU_TUNG.PhuTungId

@@ -1,0 +1,384 @@
+erDiagram
+    %% ============================================================
+    %% HỆ THỐNG QUẢN LÝ BẢO TRÌ THIẾT BỊ (CMMS)
+    %% SƠ ĐỒ QUAN HỆ THỰC THỂ ERD (27 THỰC THỂ CHUẨN 3NF)
+    %% ============================================================
+
+    %% PHÂN HỆ 1: HỆ THỐNG & TỔ CHỨC
+    NHAN_VIEN {
+        varchar NhanVienId PK
+        varchar HoTen
+        varchar SoDienThoai
+        varchar Email
+        varchar DonViId FK
+        varchar ChucVu
+        varchar ChuyenNganh
+        varchar BacTho
+        varchar CaLamViec
+        varchar TrangThaiSanSang
+        varchar TrangThai
+    }
+
+    TAI_KHOAN {
+        int TaiKhoanId PK
+        varchar NhanVienId FK
+        varchar TenDangNhap
+        varchar MatKhauHash
+        int VaiTroId FK
+        varchar TrangThaiTaiKhoan
+        int SoLanDangNhapSai
+        datetime ThoiDiemMoKhoaTam
+        datetime NgayTao
+        varchar NguoiDuyetId FK
+    }
+
+    VAI_TRO {
+        int VaiTroId PK
+        varchar TenVaiTro
+        varchar MoTa
+    }
+
+    VAI_TRO_QUYEN {
+        int VaiTroId PK,FK
+        varchar MaQuyen PK
+    }
+
+    NHAT_KY_HE_THONG {
+        bigint NhatKyId PK
+        int TaiKhoanId FK
+        datetime ThoiDiem
+        varchar LoaiThaoTac
+        varchar DoiTuongTacDong
+        text MoTaChiTiet
+    }
+
+    THU_VIEN_BIEU_MAU {
+        varchar BieuMauId PK
+        varchar TenBieuMau
+        varchar LoaiBieuMau
+        varchar DinhDangTep
+        varchar DuongDanTep
+        varchar MoTa
+    }
+
+    PHAN_XUONG_BO_PHAN {
+        varchar DonViId PK
+        varchar TenDonVi
+        varchar DonViChaId FK
+        varchar LoaiDonVi
+        varchar NguoiPhuTrachId FK
+        varchar MoTa
+    }
+
+    %% PHÂN HỆ 2: TÀI SẢN THIẾT BỊ
+    NHOM_THIET_BI {
+        varchar NhomThietBiId PK
+        varchar TenNhom
+        tinyint LaCumChiTiet
+        varchar MoTa
+    }
+
+    DANH_MUC_MA_LOI {
+        varchar MaLoiId PK
+        varchar TenLoaiSuCo
+        varchar MoTaDauHieu
+    }
+
+    THIET_BI {
+        varchar ThietBiId PK
+        varchar TenThietBi
+        varchar ThietBiChaId FK
+        varchar NhomThietBiId FK
+        varchar ViTriLapDatId FK
+        varchar BoPhanQuanLyId FK
+        varchar Model
+        varchar Serial
+        varchar NhaSanXuat
+        date NgayDuaVaoSuDung
+        int ChuKyBaoTriKhuyenNghiNgay
+        text CongDungMoTa
+        text LuuYAnToan
+        varchar TrangThaiVanHanh
+        varchar DuongDanAnh
+        varchar DuongDanTaiLieu
+    }
+
+    THONG_SO_THIET_BI {
+        bigint ThongSoId PK
+        varchar ThietBiId FK
+        varchar TenThongSo
+        varchar GiaTri
+        varchar DonViDo
+        varchar MoTa
+    }
+
+    %% PHÂN HỆ 3: BẢO TRÌ SỰ CỐ
+    CAU_HINH_MUC_UU_TIEN {
+        int MucUuTienId PK
+        varchar TenMucUuTien
+        int ThuTuUuTien
+        varchar MaMauHienThi
+        int ThoiHanPhanHoiPhut
+    }
+
+    YEU_CAU_BAO_TRI {
+        varchar YeuCauId PK
+        varchar ThietBiId FK
+        varchar NguoiBaoId FK
+        datetime ThoiDiemGui
+        text MoTaTrieuChung
+        varchar DuongDanAnhSuCo
+        tinyint MayDangDung
+        int MucUuTienDeXuatId FK
+        int MucUuTienChinhThucId FK
+        datetime HanPhanHoi
+        varchar TrangThaiYeuCau
+        varchar MaLoiId FK
+        text NhanDinhNguyenNhanSoBo
+        varchar HuongXuLy
+        varchar NguoiDuyetId FK
+        datetime ThoiDiemDuyet
+        varchar LyDoTuChoi
+    }
+
+    %% PHÂN HỆ 4: BẢO TRÌ PHÒNG NGỪA
+    MAU_CHECKLIST {
+        varchar MauChecklistId PK
+        varchar TenMau
+        varchar NhomThietBiId FK
+        text MoTaTieuChuan
+        varchar TrangThaiHieuLuc
+    }
+
+    HANG_MUC_CHECKLIST {
+        int HangMucId PK
+        varchar MauChecklistId FK
+        varchar NhomBoPhan
+        varchar NoiDungCongViec
+        varchar KieuKetQua
+        varchar TieuChuanYeuCau
+        decimal GiaTriMin
+        decimal GiaTriMax
+        varchar DonViDo
+        int ThuTuThucHien
+    }
+
+    KE_HOACH_BAO_TRI {
+        varchar KeHoachId PK
+        varchar TenKeHoach
+        varchar ThietBiId FK
+        varchar MauChecklistId FK
+        varchar DonViChuKy
+        int GiaTriChuKy
+        int SoNgaySinhLenhTruoc
+        int ThoiGianDuKienPhut
+        date NgayBatDauApDung
+        date NgayHoanThanhGanNhat
+        date NgayDenHanTiepTheo
+        varchar TrangThaiKeHoach
+        varchar MoTa
+    }
+
+    %% PHÂN HỆ 5: LỆNH & QUÁ TRÌNH BẢO TRÌ
+    LENH_BAO_TRI {
+        varchar LenhBaoTriId PK
+        varchar ThietBiId FK
+        varchar LoaiLenh
+        varchar YeuCauId FK
+        varchar KeHoachId FK
+        text NoiDungCongViec
+        int MucUuTienId FK
+        datetime ThoiGianDuKienBatDau
+        datetime ThoiGianDuKienKetThuc
+        datetime ThoiDiemThucTeBatDau
+        datetime ThoiDiemThucTeKetThuc
+        varchar LyDoTamDung
+        varchar TrangThaiLenh
+        varchar TinhTrangSauBaoTri
+        varchar NguoiBanGiaoId FK
+        varchar NguoiKyNhanId FK
+        datetime ThoiDiemNghiemThu
+        text NhanXetNghiemThu
+        varchar NguoiTaoId FK
+        varchar NguoiDuyetDongId FK
+    }
+
+    CHUYEN_MON_KTV {
+        varchar NhanVienId PK,FK
+        varchar NhomThietBiId PK,FK
+        varchar GhiChu
+    }
+
+    PHAN_CONG_KTV {
+        bigint PhanCongId PK
+        varchar LenhBaoTriId FK
+        varchar KyThuatVienId FK
+        varchar NguoiPhanCongId FK
+        datetime ThoiDiemPhanCong
+        datetime KhungGioBatDau
+        datetime KhungGioKetThuc
+        varchar VaiTroTrongLenh
+        decimal SoGioCongThucTe
+        varchar TrangThaiPhanCong
+    }
+
+    KET_QUA_CHECKLIST {
+        bigint KetQuaId PK
+        varchar LenhBaoTriId FK
+        int HangMucId FK
+        decimal GiaTriDoThucTe
+        varchar KetLuan
+        varchar NguoiKiemTraId FK
+        datetime ThoiDiemKiemTra
+        varchar GhiChu
+    }
+
+    BAO_CAO_SU_CO {
+        bigint BaoCaoSuCoId PK
+        varchar LenhBaoTriId FK
+        varchar MaLoiChinhThucId FK
+        tinyint CoDungMay
+        datetime ThoiDiemXayRa
+        datetime ThoiDiemKhoiPhuc
+        text MoTaHuHong
+        text NguyenNhanGocRe
+        int MucDoAnhHuongPhanTram
+        text BienPhapKhacPhuc
+        varchar NguoiLapBaoCaoId FK
+    }
+
+    %% PHÂN HỆ 6: QUẢN LÝ PHỤ TÙNG & KHO HIỆN VẬT
+    PHU_TUNG {
+        varchar PhuTungId PK
+        varchar TenPhuTung
+        varchar LoaiPhuTung
+        varchar QuyCach
+        varchar DonViTinh
+        decimal SoLuongTonHienCo
+        decimal SoLuongDangDuTru
+        decimal MucTonToiThieu
+        varchar MoTa
+    }
+
+    DINH_MUC_LINH_KIEN {
+        bigint DinhMucId PK
+        varchar ThietBiId FK
+        varchar PhuTungId FK
+        decimal SoLuongDinhMuc
+        tinyint ThayTheDinhKy
+        varchar ViTriLapDat
+    }
+
+    PHIEU_CAP_NHAT_TON_KHO {
+        varchar PhieuCapNhatId PK
+        varchar LoaiCapNhat
+        varchar MaPhieuKhoNgoai
+        datetime ThoiDiemLap
+        varchar NguoiLapId FK
+        varchar NguoiXacNhanId FK
+        datetime ThoiDiemXacNhan
+        varchar TrangThaiPhieu
+        varchar GhiChu
+    }
+
+    CHI_TIET_CAP_NHAT_TON_KHO {
+        bigint ChiTietCapNhatId PK
+        varchar PhieuCapNhatId FK
+        varchar PhuTungId FK
+        decimal SoLuongThayDoi
+        varchar GhiChu
+    }
+
+    PHIEU_DU_TRU_XUAT_DUNG {
+        varchar PhieuXuatId PK
+        varchar LenhBaoTriId FK
+        varchar NguoiLapDuTruId FK
+        datetime ThoiDiemLap
+        varchar NguoiKhaiBaoId FK
+        datetime ThoiDiemKhaiBao
+        varchar NguoiDuyetVuotId FK
+        datetime ThoiDiemDuyetVuot
+        varchar NguoiXacNhanXuatId FK
+        datetime ThoiDiemXacNhan
+        varchar TrangThaiPhieu
+        text GhiChu
+    }
+
+    CHI_TIET_PHIEU_XUAT {
+        bigint ChiTietId PK
+        varchar PhieuXuatId FK
+        varchar PhuTungId FK
+        decimal SoLuongDuTru
+        decimal SoLuongThucDung
+        varchar GhiChuGiaiTrinh
+    }
+
+    %% ============================================================
+    %% CÁC QUAN HỆ & BẢN SỐ (RELATIONSHIPS & CARDINALITIES)
+    %% ============================================================
+
+    %% Phân hệ 1
+    PHAN_XUONG_BO_PHAN ||--o{ PHAN_XUONG_BO_PHAN : "DonViChaId (cha-con)"
+    PHAN_XUONG_BO_PHAN ||--o{ NHAN_VIEN : "DonViId"
+    NHAN_VIEN ||--o| TAI_KHOAN : "NhanVienId (1-0..1)"
+    VAI_TRO ||--o{ TAI_KHOAN : "VaiTroId"
+    VAI_TRO ||--o{ VAI_TRO_QUYEN : "VaiTroId"
+    TAI_KHOAN ||--o{ NHAT_KY_HE_THONG : "TaiKhoanId"
+    NHAN_VIEN ||--o{ PHAN_XUONG_BO_PHAN : "NguoiPhuTrachId"
+
+    %% Phân hệ 2
+    NHOM_THIET_BI ||--o{ THIET_BI : "NhomThietBiId"
+    PHAN_XUONG_BO_PHAN ||--o{ THIET_BI : "ViTriLapDatId"
+    PHAN_XUONG_BO_PHAN ||--o{ THIET_BI : "BoPhanQuanLyId"
+    THIET_BI ||--o{ THIET_BI : "ThietBiChaId (cha-con 2 cap)"
+    THIET_BI ||--o{ THONG_SO_THIET_BI : "ThietBiId"
+
+    %% Phân hệ 3
+    CAU_HINH_MUC_UU_TIEN ||--o{ YEU_CAU_BAO_TRI : "MucUuTienDeXuatId"
+    CAU_HINH_MUC_UU_TIEN ||--o{ YEU_CAU_BAO_TRI : "MucUuTienChinhThucId"
+    THIET_BI ||--o{ YEU_CAU_BAO_TRI : "ThietBiId"
+    NHAN_VIEN ||--o{ YEU_CAU_BAO_TRI : "NguoiBaoId"
+    NHAN_VIEN ||--o{ YEU_CAU_BAO_TRI : "NguoiDuyetId"
+    DANH_MUC_MA_LOI ||--o{ YEU_CAU_BAO_TRI : "MaLoiId"
+
+    %% Phân hệ 4
+    NHOM_THIET_BI ||--o{ MAU_CHECKLIST : "NhomThietBiId"
+    MAU_CHECKLIST ||--o{ HANG_MUC_CHECKLIST : "MauChecklistId"
+    THIET_BI ||--o{ KE_HOACH_BAO_TRI : "ThietBiId"
+    MAU_CHECKLIST ||--o{ KE_HOACH_BAO_TRI : "MauChecklistId"
+
+    %% Phân hệ 5
+    THIET_BI ||--o{ LENH_BAO_TRI : "ThietBiId"
+    YEU_CAU_BAO_TRI ||--o| LENH_BAO_TRI : "YeuCauId"
+    KE_HOACH_BAO_TRI ||--o{ LENH_BAO_TRI : "KeHoachId"
+    CAU_HINH_MUC_UU_TIEN ||--o{ LENH_BAO_TRI : "MucUuTienId"
+    NHAN_VIEN ||--o{ CHUYEN_MON_KTV : "NhanVienId"
+    NHOM_THIET_BI ||--o{ CHUYEN_MON_KTV : "NhomThietBiId"
+    LENH_BAO_TRI ||--o{ PHAN_CONG_KTV : "LenhBaoTriId"
+    NHAN_VIEN ||--o{ PHAN_CONG_KTV : "KyThuatVienId"
+    NHAN_VIEN ||--o{ PHAN_CONG_KTV : "NguoiPhanCongId"
+    LENH_BAO_TRI ||--o{ KET_QUA_CHECKLIST : "LenhBaoTriId"
+    HANG_MUC_CHECKLIST ||--o{ KET_QUA_CHECKLIST : "HangMucId"
+    NHAN_VIEN ||--o{ KET_QUA_CHECKLIST : "NguoiKiemTraId"
+    LENH_BAO_TRI ||--o| BAO_CAO_SU_CO : "LenhBaoTriId (1-1)"
+    DANH_MUC_MA_LOI ||--o{ BAO_CAO_SU_CO : "MaLoiChinhThucId"
+    NHAN_VIEN ||--o{ BAO_CAO_SU_CO : "NguoiLapBaoCaoId"
+    NHAN_VIEN ||--o{ LENH_BAO_TRI : "NguoiBanGiaoId"
+    NHAN_VIEN ||--o{ LENH_BAO_TRI : "NguoiKyNhanId"
+    NHAN_VIEN ||--o{ LENH_BAO_TRI : "NguoiTaoId"
+    NHAN_VIEN ||--o{ LENH_BAO_TRI : "NguoiDuyetDongId"
+
+    %% Phân hệ 6
+    THIET_BI ||--o{ DINH_MUC_LINH_KIEN : "ThietBiId"
+    PHU_TUNG ||--o{ DINH_MUC_LINH_KIEN : "PhuTungId"
+    PHIEU_CAP_NHAT_TON_KHO ||--o{ CHI_TIET_CAP_NHAT_TON_KHO : "PhieuCapNhatId"
+    PHU_TUNG ||--o{ CHI_TIET_CAP_NHAT_TON_KHO : "PhuTungId"
+    NHAN_VIEN ||--o{ PHIEU_CAP_NHAT_TON_KHO : "NguoiLapId"
+    NHAN_VIEN ||--o{ PHIEU_CAP_NHAT_TON_KHO : "NguoiXacNhanId"
+    LENH_BAO_TRI ||--o{ PHIEU_DU_TRU_XUAT_DUNG : "LenhBaoTriId"
+    NHAN_VIEN ||--o{ PHIEU_DU_TRU_XUAT_DUNG : "NguoiLapDuTruId"
+    NHAN_VIEN ||--o{ PHIEU_DU_TRU_XUAT_DUNG : "NguoiKhaiBaoId"
+    NHAN_VIEN ||--o{ PHIEU_DU_TRU_XUAT_DUNG : "NguoiDuyetVuotId"
+    NHAN_VIEN ||--o{ PHIEU_DU_TRU_XUAT_DUNG : "NguoiXacNhanXuatId"
+    PHIEU_DU_TRU_XUAT_DUNG ||--o{ CHI_TIET_PHIEU_XUAT : "PhieuXuatId"
+    PHU_TUNG ||--o{ CHI_TIET_PHIEU_XUAT : "PhuTungId"
